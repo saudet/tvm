@@ -16,10 +16,12 @@
 # under the License.
 
 # Makefile Example to deploy TVM modules.
+CXX=/opt/nec/ve/bin/nc++
+LLVM_ROOT=../../../llvm-project
 TVM_ROOT=$(shell cd ../..; pwd)
 DMLC_CORE=${TVM_ROOT}/3rdparty/dmlc-core
 
-PKG_CFLAGS = -std=c++14 -O2 -fPIC\
+PKG_CFLAGS = -std=gnu++14 -O2 -fPIC\
 	-I${TVM_ROOT}/include\
 	-I${DMLC_CORE}/include\
 	-I${TVM_ROOT}/3rdparty/dlpack/include
@@ -28,7 +30,7 @@ PKG_LDFLAGS = -L${TVM_ROOT}/build -ldl -pthread
 
 .PHONY: clean all
 
-all: lib/cpp_deploy_pack lib/cpp_deploy_normal
+all: lib/cpp_deploy_pack # lib/cpp_deploy_normal
 
 # Build rule for all in one TVM package library
 lib/libtvm_runtime_pack.o: tvm_runtime_pack.cc
