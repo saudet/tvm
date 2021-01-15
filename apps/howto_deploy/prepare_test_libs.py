@@ -29,12 +29,12 @@ def prepare_test_libs(base_path):
     B = te.compute(A.shape, lambda *i: A(*i) + 1.0, name="B")
     s = te.create_schedule(B.op)
     # Compile library as dynamic library
-    fadd_dylib = tvm.build(s, [A, B], "llvm -mtriple=ve-linux -mcpu=ve", name="addone")
+    fadd_dylib = tvm.build(s, [A, B], "llvm -mtriple=ve-linux", name="addone")
     dylib_path = os.path.join(base_path, "test_addone_dll.so")
     fadd_dylib.export_library(dylib_path, cc.cross_compiler("/opt/nec/ve/bin/nc++"))
 
     # Compile library in system library mode
-    fadd_syslib = tvm.build(s, [A, B], "llvm -mtriple=ve-linux -mcpu=ve --system-lib", name="addonesys")
+    fadd_syslib = tvm.build(s, [A, B], "llvm -mtriple=ve-linux --system-lib", name="addonesys")
     syslib_path = os.path.join(base_path, "test_addone_sys.o")
     fadd_syslib.save(syslib_path)
 
@@ -45,7 +45,7 @@ def prepare_graph_lib(base_path):
     params = {"y": np.ones((2, 2), dtype="float32")}
     mod = tvm.IRModule.from_expr(relay.Function([x, y], x + y))
     # build a module
-    compiled_lib = relay.build(mod, tvm.target.create("llvm -mtriple=ve-linux -mcpu=ve"), params=params)
+    compiled_lib = relay.build(mod, tvm.target.create("llvm -mtriple=ve-linux"), params=params)
     # export it as a shared library
     # If you are running cross compilation, you can also consider export
     # to tar and invoke host compiler later.

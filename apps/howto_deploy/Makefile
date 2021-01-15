@@ -21,16 +21,27 @@ LLVM_ROOT=../../../llvm-project
 TVM_ROOT=$(shell cd ../..; pwd)
 DMLC_CORE=${TVM_ROOT}/3rdparty/dmlc-core
 
-PKG_CFLAGS = -std=gnu++14 -O2 -fPIC\
+PKG_CFLAGS = -std=gnu++14 -O2 -fPIC -fopenmp\
+	-DTVM_THREADPOOL_USE_OPENMP=1\
+	-I/opt/nec/ve/nlc/2.1.0/include/\
 	-I${TVM_ROOT}/include\
 	-I${DMLC_CORE}/include\
 	-I${TVM_ROOT}/3rdparty/dlpack/include
 
-PKG_LDFLAGS = -L${TVM_ROOT}/build -ldl -pthread
+PKG_LDFLAGS = ${LLVM_ROOT}/compiler-rt/lib/builtins/ve/grow_stack.S\
+	-L/opt/nec/ve/nlc/2.1.0/lib/ -lcblas -lblas_openmp\
+	-Wl,-rpath,/opt/nec/ve/nlc/2.1.0/lib/\
+	-L${TVM_ROOT}/build -ldl -pthread -rdynamic
 
 .PHONY: clean all
 
-all: lib/cpp_deploy_pack # lib/cpp_deploy_normal
+all: lib/cpp_deploy_bert lib/cpp_deploy_pack # lib/cpp_deploy_normal
+
+# Deploy the BERT model exported from optimize_bert.py for VE target
+lib/cpp_deploy_bert: cpp_deploy_bert.cc lib/libtvm_runtime_pack.o
+	@mkdir -p $(@D)
+	python3 optimize_bert.py
+	$(CXX) $(PKG_CFLAGS) -o $@  $^ $(PKG_LDFLAGS)
 
 # Build rule for all in one TVM package library
 lib/libtvm_runtime_pack.o: tvm_runtime_pack.cc

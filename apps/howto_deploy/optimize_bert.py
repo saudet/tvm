@@ -4,7 +4,9 @@ import numpy as np
 import mxnet as mx
 import gluonnlp as nlp
 import tvm
+import tvm.testing
 from tvm import relay
+from tvm.contrib import cc
 import tvm.contrib.graph_runtime as runtime
 
 def timer(thunk, repeat=1, number=10, dryrun=3, min_repeat_ms=1000):
@@ -85,8 +87,20 @@ shape_dict = {
 }
 mod, params = relay.frontend.from_mxnet(model, shape_dict)
 
+# Export for VE target...
+# ...with VPU:
+#with tvm.transform.PassContext(opt_level=3, required_pass=["FastMath"]):
+#    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=+vpu -libs=cblas", params=params)
+#
+# ...without VPU:
+with tvm.transform.PassContext(opt_level=3, config={"tir.disable_vectorize": True}, required_pass=["FastMath"]):
+    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=-vpu -libs=cblas", params=params)
+compiled_lib.export_library("lib/libbertve.so", cc.cross_compiler("/opt/nec/ve/bin/nc++"))
+
 # Compile the imported model
-target = "llvm -mcpu=skylake-avx512 -libs=cblas"
+#target = "llvm -mcpu=skylake-avx512 -libs=cblas"
+#target = "llvm -mcpu=skylake-avx512 -libs=mkl"
+target = "llvm"
 with relay.build_config(opt_level=3, required_pass=["FastMath"]):
     graph, lib, cparams = relay.build(mod, target, params=params)
 

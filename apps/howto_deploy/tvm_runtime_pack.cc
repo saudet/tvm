@@ -48,6 +48,7 @@
 #include "../../src/runtime/thread_pool.cc"
 #include "../../src/runtime/threading_backend.cc"
 #include "../../src/runtime/workspace_pool.cc"
+#include "../../src/runtime/contrib/cblas/cblas.cc"
 
 // NOTE: all the files after this are optional modules
 // that you can include remove, depending on how much feature you use.
