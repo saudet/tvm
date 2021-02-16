@@ -35,13 +35,7 @@ PKG_LDFLAGS = ${LLVM_ROOT}/compiler-rt/lib/builtins/ve/grow_stack.S\
 
 .PHONY: clean all
 
-all: lib/cpp_deploy_bert lib/cpp_deploy_pack lib/cpp_deploy_normal
-
-# Deploy the BERT model exported from optimize_bert.py for VE target
-lib/cpp_deploy_bert: cpp_deploy_bert.cc lib/libtvm_runtime_pack.so
-	@mkdir -p $(@D)
-	python3 optimize_bert.py
-	$(CXX) $(PKG_CFLAGS) -o $@  $^ $(PKG_LDFLAGS)
+all: lib/libtvm_runtime_pack.so
 
 # Build rule for all in one TVM package library (shared)
 lib/libtvm_runtime_pack.so: lib/libtvm_runtime_pack.o
@@ -52,21 +46,6 @@ lib/libtvm_runtime_pack.so: lib/libtvm_runtime_pack.o
 lib/libtvm_runtime_pack.o: tvm_runtime_pack.cc
 	@mkdir -p $(@D)
 	$(CXX) -c $(PKG_CFLAGS) -o $@  $^
-
-# The code library built by TVM
-lib/test_addone_sys.o: prepare_test_libs.py
-	@mkdir -p $(@D)
-	python3 prepare_test_libs.py
-
-# Deploy using the all in one TVM package library
-lib/cpp_deploy_pack: cpp_deploy.cc lib/test_addone_sys.o lib/libtvm_runtime_pack.o
-	@mkdir -p $(@D)
-	$(CXX) $(PKG_CFLAGS) -o $@  $^ $(PKG_LDFLAGS)
-
-# Deploy using pre-built libtvm_runtime_pack.so
-lib/cpp_deploy_normal: cpp_deploy.cc lib/test_addone_sys.o lib/libtvm_runtime_pack.so
-	@mkdir -p $(@D)
-	$(CXX) $(PKG_CFLAGS) -o $@  $^ $(PKG_LDFLAGS)
 
 clean:
 	rm -rf lib

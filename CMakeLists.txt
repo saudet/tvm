@@ -271,6 +271,16 @@ file(GLOB RUNTIME_SRCS
   src/runtime/vm/*.cc
 )
 
+if(BUILD_FOR_VE)
+  message(STATUS "Build with VE support...")
+  file(GLOB RUNTIME_VE_SRCS src/runtime/ve/*.cc)
+  list(APPEND RUNTIME_SRCS ${RUNTIME_VE_SRCS})
+  include_directories(SYSTEM /opt/nec/ve/veos/include/)
+  link_directories(/opt/nec/ve/veos/lib64/)
+  list(APPEND TVM_LINKER_LIBS veo)
+  list(APPEND TVM_RUNTIME_LINKER_LIBS veo)
+endif()
+
 if(BUILD_FOR_HEXAGON)
   # Add file implementing posix_memalign.
   list(APPEND RUNTIME_SRCS src/runtime/hexagon/hexagon_posix.cc)

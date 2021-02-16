@@ -53,7 +53,7 @@ class LibraryModuleNode final : public ModuleNode {
       faddr = reinterpret_cast<TVMBackendPackedCFunc>(lib_->GetSymbol(name.c_str()));
     }
     if (faddr == nullptr) return PackedFunc();
-    return WrapPackedFunc(faddr, sptr_to_self);
+    return lib_->WrapPackedFunc(faddr, sptr_to_self);
   }
 
  private:
@@ -107,6 +107,7 @@ void InitContextFunctions(std::function<void*(const char*)> fgetsymbol) {
  * \return Root Module.
  */
 runtime::Module ProcessModuleBlob(const char* mblob, ObjectPtr<Library> lib) {
+  if (mblob == nullptr) return Module(make_object<LibraryModuleNode>(lib));
   ICHECK(mblob != nullptr);
   uint64_t nbytes = 0;
   for (size_t i = 0; i < sizeof(nbytes); ++i) {
@@ -181,7 +182,7 @@ runtime::Module ProcessModuleBlob(const char* mblob, ObjectPtr<Library> lib) {
 }
 
 Module CreateModuleFromLibrary(ObjectPtr<Library> lib) {
-  InitContextFunctions([lib](const char* fname) { return lib->GetSymbol(fname); });
+  lib->InitContextFunctions([lib](const char* fname) { return lib->GetSymbol(fname); });
   auto n = make_object<LibraryModuleNode>(lib);
   // Load the imported modules
   const char* dev_mblob =

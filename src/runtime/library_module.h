@@ -32,6 +32,10 @@
 
 namespace tvm {
 namespace runtime {
+
+PackedFunc WrapPackedFunc(TVMBackendPackedCFunc faddr, const ObjectPtr<Object>& mptr);
+void InitContextFunctions(std::function<void*(const char*)> fgetsymbol);
+
 /*!
  * \brief Library is the common interface
  *  for storing data in the form of shared libaries.
@@ -51,6 +55,14 @@ class Library : public Object {
   virtual void* GetSymbol(const char* name) = 0;
   // NOTE: we do not explicitly create an type index and type_key here for libary.
   // This is because we do not need dynamic type downcasting.
+
+  virtual PackedFunc WrapPackedFunc(TVMBackendPackedCFunc faddr, const ObjectPtr<Object>& mptr) {
+    return tvm::runtime::WrapPackedFunc(faddr, mptr);
+  }
+
+  virtual void InitContextFunctions(std::function<void*(const char*)> fgetsymbol) {
+    tvm::runtime::InitContextFunctions(fgetsymbol);
+  }
 };
 
 /*!
@@ -65,6 +77,8 @@ PackedFunc WrapPackedFunc(TVMBackendPackedCFunc faddr, const ObjectPtr<Object>& 
  * \param fgetsymbol A symbol lookup function.
  */
 void InitContextFunctions(std::function<void*(const char*)> fgetsymbol);
+
+runtime::Module ProcessModuleBlob(const char* mblob, ObjectPtr<Library> lib);
 
 /*!
  * \brief Create a module from a library.

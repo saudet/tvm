@@ -380,7 +380,7 @@ int TVMModFree(TVMModuleHandle mod) { return TVMObjectFree(mod); }
 
 int TVMBackendGetFuncFromEnv(void* mod_node, const char* func_name, TVMFunctionHandle* func) {
   API_BEGIN();
-  *func = (TVMFunctionHandle)(static_cast<ModuleNode*>(mod_node)->GetFuncFromEnv(func_name));
+  *func = (TVMFunctionHandle)(mod_node == nullptr ? Registry::Get(func_name) : (static_cast<ModuleNode*>(mod_node)->GetFuncFromEnv(func_name)));
   API_END();
 }
 

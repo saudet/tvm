@@ -299,6 +299,14 @@ TVM_REGISTER_TARGET_KIND("hexagon", kDLHexagon)
     .add_attr_option<Array<String>>("llvm-options")
     .set_default_keys({"hexagon"});
 
+TVM_REGISTER_TARGET_KIND("ve", kDLVE)
+    .add_attr_option<Array<String>>("mattr")
+    .add_attr_option<String>("mcpu")
+    .add_attr_option<String>("mtriple")
+    .add_attr_option<Bool>("system-lib")
+    .add_attr_option<Array<String>>("llvm-options")
+    .set_default_keys({"ve"});
+
 TVM_REGISTER_TARGET_KIND("stackvm", kDLCPU)  // line break
     .add_attr_option<Bool>("system-lib");
 

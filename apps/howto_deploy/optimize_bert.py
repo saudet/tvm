@@ -87,16 +87,6 @@ shape_dict = {
 }
 mod, params = relay.frontend.from_mxnet(model, shape_dict)
 
-# Export for VE target...
-# ...with VPU:
-#with tvm.transform.PassContext(opt_level=3, required_pass=["FastMath"]):
-#    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=+vpu -libs=cblas", params=params)
-#
-# ...without VPU:
-with tvm.transform.PassContext(opt_level=3, config={"tir.disable_vectorize": True}, required_pass=["FastMath"]):
-    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=-vpu -libs=cblas", params=params)
-compiled_lib.export_library("lib/libbertve.so", cc.cross_compiler("/opt/nec/ve/bin/nc++"))
-
 # Compile the imported model
 #target = "llvm -mcpu=skylake-avx512 -libs=cblas"
 #target = "llvm -mcpu=skylake-avx512 -libs=mkl"
@@ -119,3 +109,41 @@ tvm.testing.assert_allclose(out.asnumpy(), mx_out.asnumpy(), rtol=1e-3, atol=1e-
 ftimer = rt.module.time_evaluator("run", ctx, repeat=3, min_repeat_ms=1000)
 prof_res = np.array(ftimer().results) * 1000
 print(f"TVM latency for batch {batch} and seq length {seq_length}: {np.mean(prof_res):.2f} ms")
+
+
+# Export for VE target...
+# ...with VPU:
+#with tvm.transform.PassContext(opt_level=3, required_pass=["FastMath"]):
+#    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=+vpu -libs=cblas", params=params)
+#
+# ...without VPU:
+with tvm.transform.PassContext(opt_level=3, config={"tir.disable_vectorize": True}, required_pass=["FastMath"]):
+    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=-vpu -libs=cblas", params=params)
+compiled_lib.export_library("lib/libbertve.so", cc.cross_compiler("/opt/nec/ve/bin/nc++"))
+
+# Create the executor and set the parameters and inputs
+ctx = tvm.context("ve", 0)
+set_device = tvm.get_global_func("__tvm_set_device")
+set_device(ctx.device_type, ctx.device_id)
+
+# The normal dynamic loading method for deployment
+tvm.runtime.load_module("lib/libtvm_runtime_pack.so", "vepreload")
+tvm.runtime.load_module("lib/libbertve.so", "vepreload")
+tvm.runtime.load_module("lib/libtvm_runtime_pack.so", "ve")
+loaded_lib = tvm.runtime.load_module("lib/libbertve.so", "ve")
+gmod = runtime.GraphModule(loaded_lib["default"](ctx))
+
+inputs_ve = tvm.nd.array(inputs, ctx)
+token_types_ve = tvm.nd.array(token_types, ctx)
+valid_length_ve = tvm.nd.array(valid_length, ctx)
+gmod.set_input(data0=inputs_ve, data1=token_types_ve, data2=valid_length_ve)
+
+# Run the executor and validate the correctness
+gmod.run()
+out = gmod.get_output(0)
+tvm.testing.assert_allclose(out.asnumpy(), mx_out.asnumpy(), rtol=1e-3, atol=1e-3)
+
+# Benchmark the TVM latency on VE
+ftimer = gmod.module.time_evaluator("run", ctx, repeat=3, min_repeat_ms=1000)
+prof_res = np.array(ftimer().results) * 1000
+print(f"TVM latency on VE for batch {batch} and seq length {seq_length}: {np.mean(prof_res):.2f} ms")
