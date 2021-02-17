@@ -7,6 +7,7 @@ import tvm
 import tvm.testing
 from tvm import relay
 from tvm.contrib import cc
+from tvm.contrib.debugger import debug_runtime
 import tvm.contrib.graph_runtime as runtime
 
 def timer(thunk, repeat=1, number=10, dryrun=3, min_repeat_ms=1000):
@@ -97,6 +98,8 @@ with relay.build_config(opt_level=3, required_pass=["FastMath"]):
 # Create the executor and set the parameters and inputs
 ctx = tvm.cpu()
 rt = runtime.create(graph, lib, ctx)
+# or to obtain an execution profile:
+#rt = debug_runtime.create(graph, lib, ctx)
 rt.set_input(**cparams)
 rt.set_input(data0=inputs, data1=token_types, data2=valid_length)
 
@@ -132,6 +135,8 @@ tvm.runtime.load_module("lib/libbertve.so", "vepreload")
 tvm.runtime.load_module("lib/libtvm_runtime_pack.so", "ve")
 loaded_lib = tvm.runtime.load_module("lib/libbertve.so", "ve")
 gmod = runtime.GraphModule(loaded_lib["default"](ctx))
+# or to obtain an execution profile:
+#gmod = debug_runtime.GraphModuleDebug(loaded_lib["debug_create"]("default", ctx), [ctx], compiled_lib.get_json(), '.')
 
 inputs_ve = tvm.nd.array(inputs, ctx)
 token_types_ve = tvm.nd.array(token_types, ctx)
