@@ -17,20 +17,23 @@
 
 # Makefile Example to deploy TVM modules.
 CXX=/opt/nec/ve/bin/nc++
+VEDNN_ROOT=../../../vednn
 LLVM_ROOT=../../../llvm-project
 TVM_ROOT=$(shell cd ../..; pwd)
 DMLC_CORE=${TVM_ROOT}/3rdparty/dmlc-core
 
-PKG_CFLAGS = -std=gnu++14 -O2 -fPIC -fopenmp\
+PKG_CFLAGS = -std=gnu++14 -O3 -finline-functions -fPIC -fopenmp\
 	-DTVM_THREADPOOL_USE_OPENMP=1\
-	-I/opt/nec/ve/nlc/2.1.0/include/\
+	-DVEDNN_USE_OPENMP=1\
+	-I/opt/nec/ve/nlc/2.2.0/include/\
+	-I${VEDNN_ROOT}/src/\
 	-I${TVM_ROOT}/include\
 	-I${DMLC_CORE}/include\
 	-I${TVM_ROOT}/3rdparty/dlpack/include
 
 PKG_LDFLAGS = ${LLVM_ROOT}/compiler-rt/lib/builtins/ve/grow_stack.S\
-	-L/opt/nec/ve/nlc/2.1.0/lib/ -lcblas -lblas_openmp\
-	-Wl,-rpath,/opt/nec/ve/nlc/2.1.0/lib/\
+	-L/opt/nec/ve/nlc/2.2.0/lib/ -lcblas -lblas_openmp\
+	-Wl,-rpath,/opt/nec/ve/nlc/2.2.0/lib/\
 	-L${TVM_ROOT}/build -ldl -pthread -rdynamic
 
 .PHONY: clean all

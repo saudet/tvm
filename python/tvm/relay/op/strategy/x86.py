@@ -76,6 +76,13 @@ def softmax_strategy_cpu(attrs, inputs, out_type, target):
         wrap_topi_schedule(topi.x86.schedule_softmax),
         name="softmax.x86",
     )
+    if "vednn" in target.libs:
+        strategy.add_implementation(
+            wrap_compute_softmax(topi.ve.softmax_vednn),
+            wrap_topi_schedule(topi.ve.schedule_softmax_vednn),
+            name="softmax.vednn",
+            plevel=15,
+        )
     return strategy
 
 

@@ -9,6 +9,7 @@ which provide support for the NEC SX-Aurora TSUBASA Vector Engine (VE).
  * After installing all tools necessary for LLVM-VE and TVM, run:
     ```bash
     git clone https://github.com/sx-aurora-dev/llvm-project/
+    git clone https://github.com/sx-aurora-dev/vednn
     mkdir llvm-project/build
     cd llvm-project/build
     cmake -DCMAKE_BUILD_TYPE=Release ../llvm
@@ -43,7 +44,7 @@ which provide support for the NEC SX-Aurora TSUBASA Vector Engine (VE).
     make
     lib/cpp_deploy_normal #
     lib/cpp_deploy_pack # small functions just to test
-    lib/cpp_deploy_bert
+    OMP_NUM_THREADS=8 lib/cpp_deploy_bert
     ```
 
  * Benchmark for "resnet-50", "mobilenet", "vgg-19", "inception_v3", etc ImageNet models:

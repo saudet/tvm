@@ -117,11 +117,11 @@ print(f"TVM latency for batch {batch} and seq length {seq_length}: {np.mean(prof
 # Export for VE target...
 # ...with VPU:
 #with tvm.transform.PassContext(opt_level=3, required_pass=["FastMath"]):
-#    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=+vpu -libs=cblas", params=params)
+#    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=+vpu -libs=cblas,vednn", params=params)
 #
 # ...without VPU:
 with tvm.transform.PassContext(opt_level=3, config={"tir.disable_vectorize": True}, required_pass=["FastMath"]):
-    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=-vpu -libs=cblas", params=params)
+    compiled_lib = relay.build(mod, "llvm -mtriple=ve-linux -mattr=-vpu -libs=cblas,vednn", params=params)
 compiled_lib.export_library("lib/libbertve.so", cc.cross_compiler("/opt/nec/ve/bin/nc++"))
 
 # Create the executor and set the parameters and inputs
